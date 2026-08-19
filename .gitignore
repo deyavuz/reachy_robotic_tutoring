@@ -51,6 +51,8 @@ coverage.xml
 tmp/
 *.log
 cache/
+session_state.json
+log_*.csv
 
 # macOS
 .DS_Store
