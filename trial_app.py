@@ -17,9 +17,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 from flask import Flask, request, redirect, url_for, render_template_string  # noqa: E402
 
-from bayes_algorithm import (  # noqa: E402
+from bayes_algorithm import (
     new_state, load_state, save_state, clear_state, open_question,
     update_mastery, undo_last, archive_session,
+    PRACTICE, open_practice, end_practice,
     question_bank, question_order, kc_order, STATE_PATH,
     ZPD_LOW, ZPD_HIGH, PREREQ_THRESHOLD, N_RANDOM_MISTAKES,
 )
@@ -30,6 +31,7 @@ except Exception:
     SessionRecorder, AUDIO_BACKEND = None, None
 
 PORT = 5001                      # 5000 is AirPlay on macOS
+ADMIN_TOKEN = "finduk1709" 
 SECONDS_PER_QUESTION = 120
 SOFT_WARNING_AT = 105            # 1:45
 
@@ -41,7 +43,8 @@ BASE = """
 <style>
  body{font-family:-apple-system,system-ui,sans-serif;max-width:42rem;margin:4rem auto;
       padding:0 1.5rem;line-height:1.6;color:#18181b}
- .q{font-size:1.25rem;background:#f4f4f5;padding:1.5rem;border-radius:8px;margin:2rem 0}
+ .q{font-size:1.2rem;background:#f4f4f5;padding:1.5rem 1.75rem;border-radius:8px;
+    margin:2rem 0;white-space:pre-line;line-height:1.7}
  button{font-size:1rem;padding:.75rem 1.5rem;border-radius:6px;border:1px solid #18181b;
         background:#18181b;color:#fff;cursor:pointer;margin:0 .5rem .5rem 0}
  button.ghost{background:#fff;color:#18181b}
@@ -72,7 +75,8 @@ def state_or_none():
     except FileNotFoundError:
         return None
 
-
+def admin_ok():
+    return request.args.get("key") == ADMIN_TOKEN
 # ------------------------------------------------------------- participant
 
 @app.route("/", methods=["GET", "POST"])
@@ -89,15 +93,16 @@ def start():
                 state["audio_path"] = path
                 state["audio_started_at"] = _recorder.started_at
                 save_state(state)
-        return redirect(url_for("progress"))
+        return redirect(url_for("practice"))
 
     existing = state_or_none()
     return page("""
       <h1>Session setup</h1>
       {% if existing %}
-        <p class="muted">A session for <b>{{ existing.participant_id }}</b> is already
-        open ({{ existing.index }} of {{ total }} done). Starting a new one will
-        discard it. <a href="{{ url_for('admin') }}">Open the operator panel</a>.</p>
+        <p class="muted">Unfinished session for <b>{{ existing.participant_id }}</b>
+        ({{ existing.index }} of {{ total }} done). Its data is already saved to
+        <code>data/{{ existing.participant_id }}/</code>. Starting a new session
+        discards the live state but keeps that data.</p>
       {% endif %}
       <form method="post">
         <p><label>Participant ID<br><input name="pid" required autofocus></label></p>
@@ -114,7 +119,71 @@ def start():
          audio=AUDIO_BACKEND)
 
 
-@app.route("/progress")
+@app.route("/practice")
+def practice():
+    state = state_or_none()
+    if state is None:
+        return redirect(url_for("start"))
+    if state.get("practice_done"):
+        return redirect(url_for("progress"))
+    return page("""
+      <p class="muted">Practice</p>
+      <h1>Let's try one together first</h1>
+      <p>This one doesn't count — it's just so you can see how it works. Say
+      "practice question" out loud, then read the question and the options to
+      the robot. The robot will answer, and you can talk it through together.</p>
+      <div class="q">{{ text }}</div>
+      <form method="post" action="{{ url_for('practice_begin') }}">
+        <button type="submit">I'm ready to start the conversation</button>
+      </form>
+    """, title="Practice", text=PRACTICE["text"])
+
+
+@app.route("/practice/begin", methods=["POST"])
+def practice_begin():
+    open_practice(load_state())
+    return redirect(url_for("practice_timer"))
+
+
+@app.route("/practice/timer")
+def practice_timer():
+    return page("""
+      <p class="muted">Practice</p>
+      <div class="q">{{ text }}</div>
+      <p class="muted">Take as long as you like — there's no timer on this one.</p>
+      <form method="post" action="{{ url_for('practice_judge') }}">
+        <button type="submit" class="ghost">I'm done</button>
+      </form>
+    """, title="Practice", text=PRACTICE["text"])
+
+
+@app.route("/practice/judge", methods=["GET", "POST"])
+def practice_judge():
+    return page("""
+      <h1>Was the robot's answer correct?</h1>
+      <p class="muted">You'll be asked this after every question.</p>
+      <form method="post" action="{{ url_for('practice_done') }}">
+        <button name="response" value="correct">Yes</button>
+        <button name="response" value="wrong">No</button>
+        <button name="response" value="dontknow" class="ghost">I don't know</button>
+      </form>
+    """, title="Practice")
+
+
+@app.route("/practice/done", methods=["POST"])
+def practice_done():
+    end_practice(load_state())
+    return page("""
+      <h1>That's the idea</h1>
+      <p>The robot got that one wrong — it treated red and blue as equally likely,
+      but there are three red balls and only one blue.</p>
+      <p>From here on the questions count, and you'll have two minutes each.</p>
+      <form method="post" action="{{ url_for('progress') }}">
+        <button type="submit">Start</button>
+      </form>
+    """, title="Practice")
+
+@app.route("/progress", methods=["GET", "POST"])
 def progress():
     global _recorder
     state = state_or_none()
@@ -127,11 +196,12 @@ def progress():
             _recorder = None
             state = load_state()
         folder = archive_session(state)
-        save_state(state)
+        clear_state()
         return page("""
           <h1>All done</h1>
           <p>Thank you — that's the end of the session.</p>
           <p class="muted">Saved to <code>{{ folder }}</code></p>
+          <p><a href="{{ url_for('start') }}">Start a new session</a></p>
         """, title="Done", folder=folder)
 
     return page("""
@@ -215,6 +285,7 @@ def record():
     if state.get("current") is None:
         return redirect(url_for("progress"))
     kc, before, after = update_mastery(state, request.form["response"])
+    archive_session(state, move_audio=False)
     app.logger.info("%s: %s %.2f -> %.2f", state["participant_id"], kc, before, after)
     return redirect(url_for("progress"))
 
@@ -223,6 +294,8 @@ def record():
 
 @app.route("/admin")
 def admin():
+    if not admin_ok():
+        return "Not found", 404
     state = state_or_none()
     if state is None:
         return page("""
@@ -282,13 +355,13 @@ def admin():
       </table>
 
       <h3>Controls</h3>
-      <form method="post" action="{{ url_for('admin_undo') }}" style="display:inline">
+      <form method="post" action="{{ url_for('admin_undo', key=key) }}" style="display:inline">
         <button class="ghost" {% if not s.log %}disabled{% endif %}>Undo last answer</button>
       </form>
-      <form method="post" action="{{ url_for('admin_clear_current') }}" style="display:inline">
+      <form method="post" action="{{ url_for('admin_clear_current', key=key) }}" style="display:inline">
         <button class="ghost" {% if not s.current %}disabled{% endif %}>Close live question</button>
       </form>
-      <form method="post" action="{{ url_for('admin_abort') }}" style="display:inline"
+      <form method="post" action="{{ url_for('admin_abort', key=key) }}" style="display:inline"
             onsubmit="return confirm('Archive and end this session?')">
         <button class="warn">Archive &amp; end session</button>
       </form>
@@ -299,6 +372,8 @@ def admin():
 
 @app.route("/admin/undo", methods=["POST"])
 def admin_undo():
+    if not admin_ok():
+        return "Not found", 404
     state = load_state()
     entry = undo_last(state)
     app.logger.warning("UNDO %s", entry["question_id"] if entry else "nothing")
@@ -307,6 +382,8 @@ def admin_undo():
 
 @app.route("/admin/clear-current", methods=["POST"])
 def admin_clear_current():
+    if not admin_ok():
+        return "Not found", 404
     state = load_state()
     state["current"] = None
     save_state(state)
@@ -315,6 +392,8 @@ def admin_clear_current():
 
 @app.route("/admin/abort", methods=["POST"])
 def admin_abort():
+    if not admin_ok():
+        return "Not found", 404
     global _recorder
     state = load_state()
     if _recorder is not None:

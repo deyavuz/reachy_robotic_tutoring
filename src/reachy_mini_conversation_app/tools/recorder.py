@@ -16,7 +16,7 @@ import subprocess
 import threading
 from datetime import datetime
 
-DEVICE = None          # None = system default. Set from the listing below.
+DEVICE = 0
 SAMPLE_RATE = 44100
 CHANNELS = 1
 

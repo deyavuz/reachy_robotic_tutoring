@@ -67,7 +67,7 @@ question_bank = {
         "source": "CPR Item 6 — tennis conjunction",
         "calibration": "21% correct without instruction, 24% after",
         "correct": "(a) winning the first set is more likely",
-        "text": "Suppose a tennis player reaches the Roland Garros final in 2005. He has to win 3 out of 5 sets to win the final. Which of the following two events is more likely or are they all equally likely? a. The player will win the first set. b. The player will win the first set but lose the match. c. Both events a. and b. are equally likely.",
+        "text": "Suppose a tennis player reaches the Roland Garros final in 2005. He has to win 3 out of 5 sets to win the final. Which of the following two events is more likely or are they all equally likely?\n\na. The player will win the first set.\nb. The player will win the first set but lose the match.\nc. Both events a. and b. are equally likely.",
         "line": "I think the second one is more likely — winning the first set but then losing the match.",
         "mistake_type": "conjunction fallacy",
     },
@@ -76,7 +76,7 @@ question_bank = {
         "source": "CPR Item 15 — die, independence",
         "calibration": "35% correct without instruction, 60% after",
         "correct": "1/2",
-        "text": "A person throws a die and writes down the result (odd or even). It is a fair die (that is, all the numbers are equally likely). These are the results after 15 throws: Odd, even, even, odd, odd, even, odd, odd, odd, odd, even, even, odd, odd, odd. The person throws once more. What is the probability of getting an odd number this time?", 
+        "text": "A person throws a die and writes down the result (odd or even). It is a fair die (that is, all the numbers are equally likely). These are the results after 15 throws:\n\nOdd, even, even, odd, odd, even, odd, odd, odd, odd, even, even, odd, odd, odd.\n\nThe person throws once more. What is the probability of getting an odd number this time?",
         "line": "There have been a lot of odd results already, so an even number is due. I'd say the chance of an odd number is lower now — maybe 5 out of 15.",
         "mistake_type": "gambler's fallacy",
     },
@@ -87,7 +87,7 @@ question_bank = {
         "source": "CPR Item 7 (Pollatsek et al. 1987) — cancer test",
         "calibration": "35% correct without instruction, 35% after (no improvement)",
         "correct": "(b) a positive test given the person has cancer",
-        "text": "A cancer test is administered to all the residents in a large city. A positive result is indicative of cancer and a negative result of no cancer. Which of the following results is more likely or are they all equally likely? a. A person has in fact cancer supposed that he got a positive result. b. To have a positive test supposed that the person has cancer. c. The two events are equally likely." ,   
+        "text": "A cancer test is administered to all the residents in a large city. A positive result is indicative of cancer and a negative result of no cancer. Which of the following results is more likely or are they all equally likely?\n\na. A person has in fact cancer supposed that he got a positive result.\nb. To have a positive test supposed that the person has cancer.\nc. The two events are equally likely.",
         "line": "I think those two are equally likely, since they're both about the same test and the same disease.",
         "mistake_type": "fallacy of the transposed conditional",
     },
@@ -96,7 +96,7 @@ question_bank = {
         "source": "CPR Item 9b (Falk 1986) — marbles, backward",
         "calibration": "37% correct without instruction, 25% after (worse after teaching)",
         "correct": "1/3",
-        "text": "Two black and two white marbles are put in an urn. We pick a marble from the urn. Then, without putting it back into the urn, we pick a second marble at random. If the second marble is white, what is the probability that the first marble is white? i. 1/3 ii. Cannot be computed iii. 1/6 iv. 1/2" ,
+        "text": "Two black and two white marbles are put in an urn. We pick a marble from the urn. Then, without putting it back into the urn, we pick a second marble at random. If the second marble is white, what is the probability that the first marble is white?\n\ni. 1/3\nii. Cannot be computed\niii. 1/6\niv. 1/2",
         "line": "I'd say 1/2. The first marble was already drawn before we knew anything about the second, so the second draw can't change it.",
         "mistake_type": "fallacy of the time axis",
     },
@@ -105,7 +105,7 @@ question_bank = {
         "source": "CPR Item 4 — four lamps, dependence",
         "calibration": "77% correct without instruction, 89% after",
         "correct": "(b) the second lamp is most likely to be correct",
-        "text": "There are four lamps in a box, two of which are defective. We pick up two lamps at random from the box, one after the other, without replacement. Given that the first lamp is defective, which answer is true? a. The second lamp is more likely to be defective. b. The second lamp is most likely to be correct. c. The probabilities for the second lamp being either correct or defective are the same.", 
+        "text": "There are four lamps in a box, two of which are defective. We pick up two lamps at random from the box, one after the other, without replacement. Given that the first lamp is defective, which answer is true?\n\na. The second lamp is more likely to be defective.\nb. The second lamp is most likely to be correct.\nc. The probabilities for the second lamp being either correct or defective are the same.",
         "line": "I think the probabilities are the same either way — taking one lamp out doesn't change what the second one is.",
         "mistake_type": "failure to restrict the sample space",
     },
@@ -134,7 +134,7 @@ question_bank = {
         "source": "CPR Item 10 — urn, joint probability in a diachronic setting",
         "calibration": "62% correct without instruction, 76% after",
         "correct": "(c) the two events are equally likely",
-        "text": "An urn contains one blue and two red marbles. We pick two marbles at random, one after the other without replacement. Which of the events below is more likely or are they equally likely? a. Getting two red marbles. b. The first marble is red and the second is blue c. The two events a) and b) are equally likely.", 
+        "text": "An urn contains one blue and two red marbles. We pick two marbles at random, one after the other without replacement. Which of the events below is more likely or are they equally likely?\n\na. Getting two red marbles.\nb. The first marble is red and the second is blue.\nc. The two events a) and b) are equally likely.",
         "line": "I think getting two red is more likely, since there are two red marbles and only one blue.",
         "mistake_type": "equiprobability bias",
     },
@@ -154,7 +154,7 @@ question_bank = {
         "source": "CPR Item 5 (Eddy 1982) — mammogram, conditional from joint and marginal",
         "calibration": "37% correct without instruction, 48% after",
         "correct": "0.8 / 10.3 = 7.77%",
-        "text": "10.3 % of women in a given city have a positive mammogram. The probability that a woman in this city has both positive mammogram and breast cancer is 0.8%. A mammogram given to a woman taken at random in this population was positive. What is the probability that she actually has breast cancer? a. 7.77%, from 0.8 divided by 10.3 b. 8.24%, from 10.3 times 0.8 c. 0.8%",
+        "text": "10.3% of women in a given city have a positive mammogram. The probability that a woman in this city has both positive mammogram and breast cancer is 0.8%. A mammogram given to a woman taken at random in this population was positive. What is the probability that she actually has breast cancer?\n\na. 7.77%, from 0.8 divided by 10.3\nb. 8.24%, from 10.3 times 0.8\nc. 0.8%",
         "line": "I'd multiply them — 10.3 times 0.8 gives 8.24%.",
         "mistake_type": "product substituted for the ratio",
     },
@@ -165,7 +165,7 @@ question_bank = {
         "source": "CPR Item 2 (Tversky & Kahneman 1982) — blue taxi",
         "calibration": "33% correct without instruction, 53% after",
         "correct": "(d) — approximately 41%",
-        "text": "A witness sees a crime involving a taxi in a city. The witness says that the taxi is blue. It is known from previous research that witnesses are correct 80% of the time when making such statements. The police also know that 15% of the taxis in the city are blue, the other 85% being green. What is the probability that a blue taxi was involved in the crime? a. 80 out of 100 b. 15 out of 100 c. 15 out of 100, times 80 out of 100 d. a calculation combining the base rate with the witness reliability",
+        "text": "A witness sees a crime involving a taxi in a city. The witness says that the taxi is blue. It is known from previous research that witnesses are correct 80% of the time when making such statements. The police also know that 15% of the taxis in the city are blue, the other 85% being green. What is the probability that a blue taxi was involved in the crime?\n\na. 80 out of 100\nb. 15 out of 100\nc. 15 out of 100, times 80 out of 100\nd. a calculation combining the base rate with the witness reliability",
         "line": "I think it's 80 out of 100, since that's how often the witness gets the colour right.",
         "mistake_type": "base rate fallacy",
     },
@@ -191,6 +191,28 @@ question_bank = {
 
 question_order = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7",
                   "Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14"]
+
+PRACTICE = {
+    "text": "A bag contains 3 red balls and 1 blue ball. You take one out without looking. "
+            "What is the probability that it is red?\n\na. 1 out of 2\nb. 3 out of 4\nc. 1 out of 4",
+    "line": "I think it's 1 out of 2, since the ball is either red or blue.",
+}
+
+
+def open_practice(state):
+    state["current"] = {
+        "id": "PRACTICE", "kc": None, "fires": True,
+        "line": PRACTICE["line"], "mastery_before": dict(state["mastery"]),
+        "opened_at": datetime.now().isoformat(timespec="seconds"), "practice": True,
+    }
+    save_state(state)
+    return state["current"]
+
+
+def end_practice(state):
+    state["current"] = None
+    state["practice_done"] = True
+    save_state(state)
 
 
 # ------------------------------------------------------------------ state I/O
@@ -334,7 +356,7 @@ def participant_dir(participant_id):
     return d
 
 
-def archive_session(state):
+def archive_session(state, move_audio=True):
     """Write the CSV, snapshot the state, move any audio into data/<pid>/."""
     pid = state["participant_id"]
     d = participant_dir(pid)
@@ -352,11 +374,12 @@ def archive_session(state):
     with open(os.path.join(d, f"state_{pid}.json"), "w") as f:
         json.dump(state, f, indent=2)
 
-    audio = state.get("audio_path")
-    if audio and os.path.exists(audio):
-        dest = os.path.join(d, os.path.basename(audio))
-        if os.path.abspath(audio) != os.path.abspath(dest):
-            shutil.move(audio, dest)
-            state["audio_path"] = dest
+    if move_audio:
+        audio = state.get("audio_path")
+        if audio and os.path.exists(audio):
+            dest = os.path.join(d, os.path.basename(audio))
+            if os.path.abspath(audio) != os.path.abspath(dest):
+                shutil.move(audio, dest)
+                state["audio_path"] = dest
 
     return d
