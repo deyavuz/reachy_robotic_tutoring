@@ -6,6 +6,12 @@ conversation app (which reads what to say). The trial app is the only writer;
 the robot tool only ever reads.
 
 Completed sessions are archived to data/<participant_id>/.
+
+Question wording note: several items are adapted from the CPR test
+(Diaz & Batanero 2009) and related sources, but have been reworded for clarity
+and read-aloud flow, and multiple-choice options have been removed where they
+hurt comprehension. Because of this rewording, the original published
+calibration percentages are indicative only, not exact for these versions.
 """
 
 import csv
@@ -17,17 +23,17 @@ from datetime import datetime
 
 # ---------------------------------------------------------------- parameters
 
-START_MASTERY = 0.5        # no pretest: everyone starts neutral
-UPDATE_RATE = 0.15         # hand-set, not fitted
-PREREQ_THRESHOLD = 0.45    # below start, so the gate opens and closes on evidence
+START_MASTERY = 0.5
+UPDATE_RATE = 0.15
+PREREQ_THRESHOLD = 0.45
 ZPD_LOW, ZPD_HIGH = 0.3, 0.7
-N_RANDOM_MISTAKES = 7      # control condition: fixed count, roughly half
+N_RANDOM_MISTAKES = 6      # control condition: fixed count, ~half of 12
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 
-STATE_PATH = os.path.join(HERE, "session_state.json")   # live, shared
-DATA_DIR = os.path.join(REPO, "data")                    # archived sessions
+STATE_PATH = os.path.join(HERE, "session_state.json")
+DATA_DIR = os.path.join(REPO, "data")
 
 # ------------------------------------------------------------------- the KCs
 
@@ -41,190 +47,184 @@ kc_order = [
 
 # --------------------------------------------------------------- question bank
 #
-# All items are from published instruments. Copy the exact wording into "text"
-# from the cited source — do not paraphrase, because the calibration figures
-# only hold for the original phrasing.
-#
-# CPR = Diaz & Batanero (2009), Appendix A:
-#   https://www.iejme.com/download/university-students-knowledge-and-biases-in-
-#   conditional-probability-reasoning.pdf
-#
-# preflight.py will list any question still missing its text.
+# 12 questions: KC1=2, KC2=2, KC3=3, KC4=2, KC5=3.
+# Cut from the 14-item version: the tennis conjunction item (weak, barely
+# taught) and the cancer transposed-conditional item (confusing options).
+# Reworded for clarity; MC options kept only where they genuinely help.
 
 question_bank = {
     # ---- KC1: probability foundations ----
     "Q1": {
         "kc": "KC1_foundations",
-        "source": "Kahneman & Tversky (1973) — engineer/lawyer",
-        "calibration": "responses cluster near 90% despite the 30% base rate",
-        "correct": "30% (the base rate)",
-        "text": "A panel of psychologists interviewed 30 engineers and 70 lawyers, all successful in their fields, and wrote a short description of each one. Here is one of those 100 descriptions, chosen at random. Jack is a 45-year-old man. He is married and has four children. He is generally conservative, careful, and ambitious. He shows no interest in political and social issues and spends most of his free time on his many hobbies, which include home carpentry, sailing, and mathematical puzzles. What is the probability that Jack is one of the 30 engineers?",
-        "line": "He sounds just like an engineer — home carpentry, sailing, mathematical puzzles. I'd say around 90%.",
+        "source": "Kahneman & Tversky (1973) — engineer/lawyer, 'Jack' description",
+        "correct": "30% — the base rate, since the description is uninformative",
+        "text": "A room contains 100 people: 30 of them are engineers and 70 are lawyers. "
+                "Someone is picked from the room at random. Here is a short description of them: "
+                "\"Jack is 45. He is married with four children. He is careful, ambitious, and "
+                "shows little interest in politics. In his spare time he enjoys carpentry, "
+                "sailing, and solving mathematical puzzles.\" "
+                "What is the probability that Jack is one of the engineers?",
+        "line": "He sounds just like an engineer — carpentry, sailing, mathematical puzzles. I'd say around 90%.",
         "mistake_type": "base rate neglect (judgment form)",
     },
     "Q2": {
         "kc": "KC1_foundations",
-        "source": "CPR Item 6 — tennis conjunction",
-        "calibration": "21% correct without instruction, 24% after",
-        "correct": "(a) winning the first set is more likely",
-        "text": "Suppose a tennis player reaches the Roland Garros final in 2005. He has to win 3 out of 5 sets to win the final. Which of the following two events is more likely or are they all equally likely?\n\na. The player will win the first set.\nb. The player will win the first set but lose the match.\nc. Both events a. and b. are equally likely.",
-        "line": "I think the second one is more likely — winning the first set but then losing the match.",
-        "mistake_type": "conjunction fallacy",
-    },
-    "Q3": {
-        "kc": "KC1_foundations",
         "source": "CPR Item 15 — die, independence",
-        "calibration": "35% correct without instruction, 60% after",
-        "correct": "1/2",
-        "text": "A person throws a die and writes down the result (odd or even). It is a fair die (that is, all the numbers are equally likely). These are the results after 15 throws:\n\nOdd, even, even, odd, odd, even, odd, odd, odd, odd, even, even, odd, odd, odd.\n\nThe person throws once more. What is the probability of getting an odd number this time?",
-        "line": "There have been a lot of odd results already, so an even number is due. I'd say the chance of an odd number is lower now — maybe 5 out of 15.",
+        "correct": "1/2 — each throw is independent",
+        "text": "Someone rolls a fair die and writes down whether the result is odd or even. "
+                "So far they have rolled eleven times, and got an odd number almost every time. "
+                "They are about to roll once more. "
+                "What is the probability that this next roll is odd?",
+        "line": "There have already been so many odd rolls, so an even one feels overdue. I'd say the chance of odd is now lower than half.",
         "mistake_type": "gambler's fallacy",
     },
 
     # ---- KC2: conditional probability ----
-    "Q4": {
+    "Q3": {
         "kc": "KC2_conditional",
-        "source": "CPR Item 7 (Pollatsek et al. 1987) — cancer test",
-        "calibration": "35% correct without instruction, 35% after (no improvement)",
-        "correct": "(b) a positive test given the person has cancer",
-        "text": "A cancer test is administered to all the residents in a large city. A positive result is indicative of cancer and a negative result of no cancer. Which of the following results is more likely or are they all equally likely?\n\na. A person has in fact cancer supposed that he got a positive result.\nb. To have a positive test supposed that the person has cancer.\nc. The two events are equally likely.",
-        "line": "I think those two are equally likely, since they're both about the same test and the same disease.",
-        "mistake_type": "fallacy of the transposed conditional",
-    },
-    "Q5": {
-        "kc": "KC2_conditional",
-        "source": "CPR Item 9b (Falk 1986) — marbles, backward",
-        "calibration": "37% correct without instruction, 25% after (worse after teaching)",
+        "source": "CPR Item 9b (Falk 1986) — marbles, backward conditioning",
         "correct": "1/3",
-        "text": "Two black and two white marbles are put in an urn. We pick a marble from the urn. Then, without putting it back into the urn, we pick a second marble at random. If the second marble is white, what is the probability that the first marble is white?\n\ni. 1/3\nii. Cannot be computed\niii. 1/6\niv. 1/2",
-        "line": "I'd say 1/2. The first marble was already drawn before we knew anything about the second, so the second draw can't change it.",
+        "text": "A bag holds two black marbles and two white marbles. "
+                "You draw one marble and set it aside without looking at it. "
+                "You then draw a second marble, and it is white. "
+                "Given that the second marble is white, what is the probability that the first "
+                "marble — the one you set aside — is also white?",
+        "line": "I'd say one half. The first marble was already drawn before the second, so the second one can't tell us anything about it.",
         "mistake_type": "fallacy of the time axis",
     },
-    "Q6": {
+    "Q4": {
         "kc": "KC2_conditional",
         "source": "CPR Item 4 — four lamps, dependence",
-        "calibration": "77% correct without instruction, 89% after",
-        "correct": "(b) the second lamp is most likely to be correct",
-        "text": "There are four lamps in a box, two of which are defective. We pick up two lamps at random from the box, one after the other, without replacement. Given that the first lamp is defective, which answer is true?\n\na. The second lamp is more likely to be defective.\nb. The second lamp is most likely to be correct.\nc. The probabilities for the second lamp being either correct or defective are the same.",
-        "line": "I think the probabilities are the same either way — taking one lamp out doesn't change what the second one is.",
+        "correct": "the second lamp is more likely to be good than defective",
+        "text": "A box holds four lamps. Two of them are broken and two work. "
+                "You take out two lamps, one after the other, without putting the first back. "
+                "The first lamp you take out turns out to be broken. "
+                "Given that, is the second lamp you take out more likely to be broken, "
+                "more likely to work, or equally likely either way?",
+        "line": "I think it's equally likely either way — taking one lamp out doesn't change what the second one is.",
         "mistake_type": "failure to restrict the sample space",
     },
 
     # ---- KC3: joint probability and the product rule ----
-    "Q7": {
+    "Q5": {
         "kc": "KC3_joint",
         "source": "CPR Item 17 — lying, product rule (dependent)",
-        "calibration": "24% correct without instruction, 62% after",
-        "correct": "0.91 x 0.36 = 0.3276",
-        "text": "According to a recent survey, 91% of the population in a city do lie and 36% of those lie about important matters. If we pick a person at random from this city, what is the probability that the person lies about important matters? ",
+        "correct": "0.91 x 0.36 = about 0.33",
+        "text": "In a certain city, 91% of people admit that they sometimes lie. "
+                "Of the people who lie, 36% say they lie about important things. "
+                "If you pick someone from the city at random, what is the probability that they "
+                "are someone who lies about important things?",
         "line": "If I divide 0.36 by 0.91, I get about 0.40, so the answer is 0.40.",
-        "mistake_type": "conditional computed where a joint is required",
+        "mistake_type": "division instead of multiplication for a joint probability",
     },
-    "Q8": {
+    "Q6": {
         "kc": "KC3_joint",
         "source": "CPR Item 16 — maths/English, product rule (independent)",
-        "calibration": "26% correct without instruction, 49% after",
         "correct": "0.8 x 0.7 = 0.56",
-        "text": "A group of students in a school take a test in mathematics and one in English. 80% of the students pass the mathematics test and 70% of the students pass the English test. Assuming that students’ scores on the two tests are independent, what is the probability that a student passes both tests (mathematics and English)?",
-        "line": "I'd add them together — 80 out of 100 plus 70 out of 100, so 150 out of 100.",
+        "text": "In a school, 80% of students pass the maths test and 70% pass the English test. "
+                "Whether a student passes one test has no bearing on the other. "
+                "If you pick a student at random, what is the probability that they passed "
+                "both tests?",
+        "line": "I'd add them together — 80% plus 70% — so 150%.",
         "mistake_type": "addition rule substituted for the product rule",
     },
-    "Q9": {
+    "Q7": {
         "kc": "KC3_joint",
-        "source": "CPR Item 10 — urn, joint probability in a diachronic setting",
-        "calibration": "62% correct without instruction, 76% after",
-        "correct": "(c) the two events are equally likely",
-        "text": "An urn contains one blue and two red marbles. We pick two marbles at random, one after the other without replacement. Which of the events below is more likely or are they equally likely?\n\na. Getting two red marbles.\nb. The first marble is red and the second is blue.\nc. The two events a) and b) are equally likely.",
-        "line": "I think getting two red is more likely, since there are two red marbles and only one blue.",
-        "mistake_type": "equiprobability bias",
+        "source": "CPR Item 10 — urn, joint probability",
+        "correct": "the two events are equally likely (each 1/3)",
+        "text": "A bag holds one blue marble and two red marbles. "
+                "You draw two marbles, one after the other, without putting the first back. "
+                "Which is more likely: that you draw two red marbles, or that you draw a red "
+                "one first and then the blue one? Or are they equally likely?",
+        "line": "Drawing two red seems more likely to me, since there are two red marbles and only one blue.",
+        "mistake_type": "representativeness — compound probabilities not computed",
     },
 
     # ---- KC4: total probability ----
-    "Q10": {
+    "Q8": {
         "kc": "KC4_total_prob",
         "source": "CPR Item 14 — smokers by gender",
-        "calibration": "18% correct without instruction, 69% after (largest instructional gain)",
         "correct": "0.6 x 0.5 + 0.4 x 0.25 = 0.4",
-        "text": "60% of the population in a city are men, 40% women. 50% of the men and 25% of the women smoke. We select a person from the city at random; what is the probability that this person is a smoker?",
-        "line": "So 50 men smoke and 25 women smoke, that's 75 out of 200 people, so about 37.5%.",
-        "mistake_type": "denominator neglect — branches unweighted",
+        "text": "In a city, 60% of people are men and 40% are women. "
+                "Half of the men smoke, and a quarter of the women smoke. "
+                "If you pick one person from the city at random, what is the probability that "
+                "they smoke?",
+        "line": "Fifty men smoke and twenty-five women smoke, so that's seventy-five out of two hundred — about 37.5%.",
+        "mistake_type": "branches not weighted by group size",
     },
-    "Q11": {
+    "Q9": {
         "kc": "KC4_total_prob",
-        "source": "CPR Item 5 (Eddy 1982) — mammogram, conditional from joint and marginal",
-        "calibration": "37% correct without instruction, 48% after",
-        "correct": "0.8 / 10.3 = 7.77%",
-        "text": "10.3% of women in a given city have a positive mammogram. The probability that a woman in this city has both positive mammogram and breast cancer is 0.8%. A mammogram given to a woman taken at random in this population was positive. What is the probability that she actually has breast cancer?\n\na. 7.77%, from 0.8 divided by 10.3\nb. 8.24%, from 10.3 times 0.8\nc. 0.8%",
-        "line": "I'd multiply them — 10.3 times 0.8 gives 8.24%.",
-        "mistake_type": "product substituted for the ratio",
+        "source": "CPR Item 5 (Eddy 1982) — mammogram",
+        "correct": "about 7.8%",
+        "text": "In a large group of women, 1% actually have breast cancer. "
+                "The remaining 99% do not. "
+                "A woman takes a mammogram and it comes back positive. "
+                "Given only that her test is positive, roughly what is the probability that she "
+                "actually has breast cancer — is it closer to 8%, or closer to 80%?",
+        "line": "If the test came back positive, I'd say it's around 80% likely she has it.",
+        "mistake_type": "positive result read as the posterior, base rate ignored",
     },
 
     # ---- KC5: Bayesian updating ----
-    "Q12": {
+    "Q10": {
         "kc": "KC5_updating",
         "source": "CPR Item 2 (Tversky & Kahneman 1982) — blue taxi",
-        "calibration": "33% correct without instruction, 53% after",
-        "correct": "(d) — approximately 41%",
-        "text": "A witness sees a crime involving a taxi in a city. The witness says that the taxi is blue. It is known from previous research that witnesses are correct 80% of the time when making such statements. The police also know that 15% of the taxis in the city are blue, the other 85% being green. What is the probability that a blue taxi was involved in the crime?\n\na. 80 out of 100\nb. 15 out of 100\nc. 15 out of 100, times 80 out of 100\nd. a calculation combining the base rate with the witness reliability",
-        "line": "I think it's 80 out of 100, since that's how often the witness gets the colour right.",
+        "correct": "about 41%",
+        "text": "A taxi was involved in a hit-and-run one night. "
+                "In the city, 85% of taxis are green and 15% are blue. "
+                "A witness says the taxi was blue. When tested, this witness correctly identifies "
+                "the colour of a taxi at night 80% of the time. "
+                "Given the witness said blue, what is the probability that the taxi really was blue?",
+        "line": "I'd say around 80%, since that's how often the witness gets the colour right.",
         "mistake_type": "base rate fallacy",
     },
-    "Q13": {
+    "Q11": {
         "kc": "KC5_updating",
         "source": "CPR Item 18 (Totohasina 1992) — two machines",
-        "calibration": "4% correct without instruction, 50% after (most discriminating item)",
-        "correct": "0.769",
-        "text": "Two machines M1 and M2 produce balls. Machine M1 produces 40 % and M2 60% of balls. 5% of the balls produced by M1 and 1% of those produced by M2 are defective. We take a ball at random and it is defective. What is the probability that that ball was produced by machine M1?",  
-        "line": "I think it's 5%, since that's how often machine M1 produces a defective ball.",
+        "correct": "about 0.77",
+        "text": "Two machines make the same kind of ball. "
+                "Machine A makes 40% of all the balls, and Machine B makes the other 60%. "
+                "5% of Machine A's balls are defective, and only 1% of Machine B's are. "
+                "You pick up a ball at random and find it is defective. "
+                "What is the probability that it came from Machine A?",
+        "line": "I'd say 5%, since that's how often Machine A makes a defective ball.",
         "mistake_type": "inverse conditional reported as the posterior",
     },
-    "Q14": {
+    "Q12": {
         "kc": "KC5_updating",
-        "source": "Casscells, Schoenberger & Grayboys (1978) — rare disease",
-        "calibration": "Casscells et al. report ~18% correct among physicians on the original item; wording here is paraphrased",
-        "correct": "~2%",
-        "text": "If a disease has a prevalence of 1 in 1000, and a particular test for it has a false positive rate of 5%, and one random person tests positive for the disease, what is the likelihood that they have the disease?",
-        "line": "I think the answer is 95%, since the test only gives a false positive 5% of the time.",
+        "source": "Casscells et al. (1978) — rare disease (paraphrased)",
+        "correct": "about 2%",
+        "text": "A disease affects about 1 in every 1,000 people. "
+                "There is a test for it. If you have the disease, the test is always positive. "
+                "If you do not have the disease, the test is still positive 5% of the time — a "
+                "false alarm. "
+                "You take the test and it comes back positive. "
+                "Given only that, what is the probability that you actually have the disease?",
+        "line": "I'd say about 95%, since the test only gives a false positive 5% of the time.",
         "mistake_type": "base rate neglect (computational form)",
     },
 }
 
-question_order = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7",
-                  "Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14"]
+question_order = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6",
+                  "Q7", "Q8", "Q9", "Q10", "Q11", "Q12"]
 
 PRACTICE = {
-    "text": "A bag contains 3 red marbles and 1 blue marble. You take one out without looking. "
-            "What is the probability that it is red?\n\na. 1 out of 2\nb. 3 out of 4\nc. 1 out of 4",
-    "line": "I think it's 1 out of 2, since the marble is either red or blue.",
+    "text": "Here's a warm-up. A bag has 3 red marbles and 1 blue marble. "
+            "You take one out without looking. What is the probability that it is red?",
+    "line": "I think it's a half, since the marble is either red or blue.",
 }
-
-
-def open_practice(state):
-    state["current"] = {
-        "id": "PRACTICE", "kc": None, "fires": True,
-        "line": PRACTICE["line"], "mastery_before": dict(state["mastery"]),
-        "opened_at": datetime.now().isoformat(timespec="seconds"), "practice": True,
-    }
-    save_state(state)
-    return state["current"]
-
-
-def end_practice(state):
-    state["current"] = None
-    state["practice_done"] = True
-    save_state(state)
-
 
 # ------------------------------------------------------------------ state I/O
 
 def new_state(participant_id, condition):
     state = {
         "participant_id": participant_id,
-        "condition": condition,               # "zpd" or "random"
+        "condition": condition,
         "started_at": datetime.now().isoformat(timespec="seconds"),
         "index": 0,
         "mastery": {kc: START_MASTERY for kc in kc_order},
         "current": None,
+        "practice_done": False,
         "log": [],
     }
     if condition == "random":
@@ -244,7 +244,7 @@ def save_state(state):
     tmp = STATE_PATH + ".tmp"
     with open(tmp, "w") as f:
         json.dump(state, f, indent=2)
-    os.replace(tmp, STATE_PATH)      # atomic: the reader never sees a half file
+    os.replace(tmp, STATE_PATH)
 
 
 def clear_state():
@@ -255,24 +255,19 @@ def clear_state():
 # ------------------------------------------------------------ selection logic
 
 def should_fire(state, question_id):
-    """Decide whether this question gets a scripted mistake."""
     if state["condition"] == "random":
         return question_id in state.get("random_plan", [])
-
     mastery = state["mastery"]
     kc = question_bank[question_id]["kc"]
     idx = kc_order.index(kc)
-
     if not all(mastery[p] > PREREQ_THRESHOLD for p in kc_order[:idx]):
         return False
     return ZPD_LOW <= mastery[kc] <= ZPD_HIGH
 
 
 def open_question(state, question_id):
-    """Fix the decision now and write it, so the robot tool only reads."""
     entry = question_bank[question_id]
     fires = should_fire(state, question_id)
-
     state["current"] = {
         "id": question_id,
         "kc": entry["kc"],
@@ -285,24 +280,26 @@ def open_question(state, question_id):
     return state["current"]
 
 
+def open_practice(state):
+    state["current"] = {
+        "id": "PRACTICE", "kc": None, "fires": True,
+        "line": PRACTICE["line"], "mastery_before": dict(state["mastery"]),
+        "opened_at": datetime.now().isoformat(timespec="seconds"), "practice": True,
+    }
+    save_state(state)
+    return state["current"]
+
+
+def end_practice(state):
+    state["current"] = None
+    state["practice_done"] = True
+    save_state(state)
+
+
 # ----------------------------------------------------------- mastery updating
 
 def update_mastery(state, response):
-    """Apply the participant's judgement.
-
-    response: "correct" | "wrong" | "dontknow"
-
-    Four-cell logic — mastery reflects whether they can tell sound reasoning
-    from unsound, so every question yields evidence, not only the ones where a
-    mistake fired:
-
-        robot wrong  + said wrong    -> up      (caught it)
-        robot wrong  + said correct  -> down    (missed it)
-        robot right  + said correct  -> up      (recognised sound reasoning)
-        robot right  + said wrong    -> down    (false alarm)
-
-    "dontknow" is neutral.
-    """
+    """response: 'correct' | 'wrong' | 'dontknow'. Four-cell logic."""
     current = state["current"]
     kc = current["kc"]
     before = state["mastery"][kc]
@@ -317,7 +314,6 @@ def update_mastery(state, response):
                  else max(0.0, before - UPDATE_RATE))
 
     state["mastery"][kc] = round(after, 4)
-
     state["log"].append({
         "question_id": current["id"],
         "kc": kc,
@@ -329,7 +325,6 @@ def update_mastery(state, response):
         "opened_at": current["opened_at"],
         "answered_at": datetime.now().isoformat(timespec="seconds"),
     })
-
     state["index"] += 1
     state["current"] = None
     save_state(state)
@@ -337,7 +332,6 @@ def update_mastery(state, response):
 
 
 def undo_last(state):
-    """Roll back the most recent answered question. Operator use only."""
     if not state["log"]:
         return None
     entry = state["log"].pop()
@@ -357,7 +351,6 @@ def participant_dir(participant_id):
 
 
 def archive_session(state, move_audio=True):
-    """Write the CSV, snapshot the state, move any audio into data/<pid>/."""
     pid = state["participant_id"]
     d = participant_dir(pid)
 
@@ -383,24 +376,3 @@ def archive_session(state, move_audio=True):
                 state["audio_path"] = dest
 
     return d
-
-"""Functions to add to bayes_algorithm.py for questionnaire persistence.
-
-These write questionnaire responses into the same data/<pid>/ folder as the
-trial log, so a participant's entire session lives in one place.
-"""
-
-def save_questionnaire(state, which, answers):
-    """which: 'pre' or 'post'. answers: dict of key -> value."""
-    import csv, os
-    state[f"{which}_questionnaire"] = answers
-    save_state(state)
-
-    d = participant_dir(state["participant_id"])
-    path = os.path.join(d, f"{which}_{state['participant_id']}.csv")
-    with open(path, "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["participant_id", "condition", "question_key", "response"])
-        for k, v in answers.items():
-            w.writerow([state["participant_id"], state["condition"], k, v])
-    return path
