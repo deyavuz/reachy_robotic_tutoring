@@ -6,7 +6,7 @@ __pycache__/
 data/
 recordings/
 src/reachy_mini_conversation_app/tools/recordings/
-session_state.json
+session_state*.json
 *.wav
 
 # Virtual environments
@@ -56,7 +56,6 @@ coverage.xml
 tmp/
 *.log
 cache/
-session_state.json
 log_*.csv
 
 # macOS

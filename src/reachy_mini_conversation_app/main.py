@@ -131,11 +131,16 @@ def run(
 
     if robot is None:
         try:
-            robot_kwargs = {}
+            robot_kwargs: dict[str, Any] = {}
             if args.robot_name is not None:
                 robot_kwargs["robot_name"] = args.robot_name
+            if args.media_backend != "default":
+                robot_kwargs["media_backend"] = args.media_backend
 
-            logger.info("Initializing ReachyMini (SDK will auto-detect appropriate backend)")
+            logger.info(
+                "Initializing ReachyMini (media backend: %s)",
+                args.media_backend if args.media_backend != "default" else "auto-detect",
+            )
             robot = ReachyMini(**robot_kwargs)
 
         except TimeoutError as e:

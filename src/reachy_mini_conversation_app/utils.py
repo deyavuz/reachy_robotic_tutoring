@@ -22,6 +22,18 @@ def parse_args() -> tuple[argparse.Namespace, list]:  # type: ignore
         default=None,
         help="[Optional] Robot name to target. Must match the daemon's --robot-name when connecting to a specific robot, mainly useful for development with multiple robots.",
     )
+    parser.add_argument(
+        "--media-backend",
+        type=str,
+        default="default",
+        choices=("default", "local", "webrtc", "no_media"),
+        help=(
+            "[Optional] Media backend for camera/audio. 'default' auto-detects LOCAL "
+            "when the daemon runs on this machine, WEBRTC otherwise. Force 'webrtc' when "
+            "a local daemon (e.g. Reachy Mini Control) bridges to a remote robot, so "
+            "audio streams to the robot's own mic/speakers instead of this machine's."
+        ),
+    )
     subparsers = parser.add_subparsers(dest="command")
     tool_spaces_parser = subparsers.add_parser("tool-spaces", help="Manage installed Hugging Face Space tool sources")
     tool_spaces_subparsers = tool_spaces_parser.add_subparsers(dest="tool_spaces_command", required=True)

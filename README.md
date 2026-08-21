@@ -169,6 +169,7 @@ The app runs in console mode. Add `--ui` to serve the web interface at http://12
 | `--no-camera` | `False` | Run without camera capture. |
 | `--ui` | `False` | Serve the web UI at http://127.0.0.1:7860/, in addition to console mode. |
 | `--robot-name` | `None` | Optional. Connect to a specific robot by name when running multiple daemons on the same subnet. See [Multiple robots on the same subnet](#advanced-features). |
+| `--media-backend` | `default` | Camera/audio backend: `default` auto-detects (`local` when the daemon runs on this machine, `webrtc` otherwise), or force `local`, `webrtc`, or `no_media`. Force `webrtc` when a local daemon (e.g. Reachy Mini Control) bridges to a remote robot — otherwise audio plays through this machine's mic/speakers instead of the robot's. |
 | `--debug` | `False` | Enable verbose logging for troubleshooting. |
 
 ### Examples
@@ -179,6 +180,9 @@ reachy-mini-conversation-app --no-camera
 
 # Launch with the minimal web UI for personality/mic/settings control
 reachy-mini-conversation-app --ui
+
+# Force audio/camera to stream to a remote robot via a local daemon bridge
+reachy-mini-conversation-app --media-backend webrtc
 ```
 
 ## LLM tools exposed to the assistant

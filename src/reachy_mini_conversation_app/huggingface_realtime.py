@@ -233,7 +233,15 @@ class HuggingFaceRealtimeHandler(ConversationHandler):
                         model="gpt-4o-transcribe",
                         language=config.REALTIME_TRANSCRIPTION_LANGUAGE,
                     ),
-                    turn_detection=ServerVad(type="server_vad", interrupt_response=True),
+                    # Defaults are tuned for a quiet 1-on-1 room; raised here so ambient
+                    # chatter from bystanders doesn't false-trigger a barge-in cutoff.
+                    turn_detection=ServerVad(
+                        type="server_vad",
+                        interrupt_response=True,
+                        threshold=0.7,
+                        prefix_padding_ms=300,
+                        silence_duration_ms=700,
+                    ),
                 ),
                 output=RealtimeAudioConfigOutputParam(
                     format=_native_rate_audio_pcm(),  # type: ignore[typeddict-item]
