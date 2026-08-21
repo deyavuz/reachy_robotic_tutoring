@@ -121,15 +121,15 @@ def intro():
     return page("""
       <h1>Welcome — thanks for taking part</h1>
       <p class="lead">In this study you'll help a small robot that's still learning
-      probability. You'll read it a series of short probability puzzles, one at a time,
+      probability. You'll read it a series of short probability questions, one at a time,
       and talk each one through together.</p>
       <p class="lead">The robot is a learner, so it won't always get things right. When
       you think it's mistaken, say so and explain your thinking — that's exactly what
       we're interested in. There are no trick questions and nothing to revise.</p>
-      <p class="lead">We'll start with one relaxed practice puzzle so you can see how it
+      <p class="lead">We'll start with one relaxed practice question so you can see how it
       works, and then move on to the real ones. Take your time throughout.</p>
       <form method="post" action="{{ url_for('practice') }}">
-        <button type="submit">Start with the practice puzzle</button>
+        <button type="submit">Start with the practice question</button>
       </form>
     """, title="Welcome")
 
@@ -142,9 +142,9 @@ def practice():
     if state.get("practice_done"):
         return redirect(url_for("progress"))
     return page("""
-      <p class="muted">Practice puzzle · doesn't count</p>
+      <p class="muted">Practice question · doesn't count</p>
       <h1>Let's try one together</h1>
-      <p>When you're ready, read the puzzle below out loud to the robot, then talk it
+      <p>When you're ready, read the question below out loud to the robot, then talk it
       through. If the robot gets it wrong, explain what you think the right answer is.</p>
       <div class="q">{{ text }}</div>
       <form method="post" action="{{ url_for('practice_begin') }}">
@@ -157,7 +157,7 @@ def practice():
 def practice_begin():
     open_practice(load_state())
     return page("""
-      <p class="muted">Practice puzzle · doesn't count</p>
+      <p class="muted">Practice question · doesn't count</p>
       <div class="q">{{ text }}</div>
       <p class="muted">Talk it through with the robot. When you're done, tap below.</p>
       <form method="post" action="{{ url_for('practice_judge') }}">
@@ -170,7 +170,7 @@ def practice_begin():
 def practice_judge():
     return page("""
       <h1>Was the robot's first answer correct?</h1>
-      <p class="muted">You'll be asked this after every puzzle. Just your honest read
+      <p class="muted">You'll be asked this after every question. Just your honest read
       of the robot's <b>first</b> answer, before any correction.</p>
       <form method="post" action="{{ url_for('practice_done') }}">
         <button name="r" value="correct">Yes</button>
@@ -185,11 +185,11 @@ def practice_done():
     end_practice(load_state())
     return page("""
       <h1>That's the idea</h1>
-      <p class="lead">From here on the puzzles count. There are twelve of them. Read each
+      <p class="lead">From here on the questions count. There are twelve of them. Read each
       one aloud, talk it through with the robot, and tell us whether its first answer was
       right. Take as long as you like on each.</p>
       <form method="post" action="{{ url_for('progress') }}">
-        <button type="submit">Start the first puzzle</button>
+        <button type="submit">Start the first question</button>
       </form>
     """, title="Ready")
 
@@ -210,16 +210,16 @@ def progress():
         save_state(state)
         return page("""
           <h1>All done — thank you!</h1>
-          <p class="lead">That's the end of the puzzles. There's a short questionnaire to
+          <p class="lead">That's the end of the questions. There's a short questionnaire to
           finish up — the researcher will point you to it.</p>
           <p class="muted">Saved to <code>{{ folder }}</code></p>
         """, title="Done", folder=folder)
 
     return page("""
-      <p class="muted">Puzzle {{ n }} of {{ total }}</p>
-      <h1>Ready for the next puzzle?</h1>
+      <p class="muted">Question {{ n }} of {{ total }}</p>
+      <h1>Ready for the next question?</h1>
       <form method="post" action="{{ url_for('show') }}">
-        <button type="submit">Show me puzzle {{ n }}</button>
+        <button type="submit">Show me question {{ n }}</button>
       </form>
     """, n=state["index"] + 1, total=len(question_order))
 
@@ -229,7 +229,7 @@ def show():
     state = load_state()
     qid = question_order[state["index"]]
     return page("""
-      <p class="muted">Puzzle {{ n }} of {{ total }}</p>
+      <p class="muted">Question {{ n }} of {{ total }}</p>
       <div class="q">{{ text }}</div>
       <p>Read this out loud to the robot when you're ready, then talk it through.</p>
       <form method="post" action="{{ url_for('begin') }}">
@@ -253,7 +253,7 @@ def discuss():
         return redirect(url_for("progress"))
     qid = state["current"]["id"]
     return page("""
-      <p class="muted">Puzzle {{ n }} of {{ total }}</p>
+      <p class="muted">Question {{ n }} of {{ total }}</p>
       <div class="q">{{ text }}</div>
       <p id="note" class="muted">Talk it through with the robot. Tap below when you're done.</p>
       <form method="post" action="{{ url_for('judge') }}">
@@ -338,7 +338,7 @@ def admin():
         {% endfor %}
       </table>
       <p class="muted">green = in ZPD band · blue = mastered · grey = not ready</p>
-      <h3>Puzzles</h3>
+      <h3>Questions</h3>
       <table>
         <tr><th>Q</th><th>KC</th><th>mistake</th><th>said</th><th>judged</th></tr>
         {% for u in upcoming %}
@@ -352,7 +352,7 @@ def admin():
         <button class="ghost" {% if not s.log %}disabled{% endif %}>Undo last answer</button>
       </form>
       <form method="post" action="{{ url_for('admin_clear_current', key=key) }}" style="display:inline">
-        <button class="ghost" {% if not s.current %}disabled{% endif %}>Close live puzzle</button>
+        <button class="ghost" {% if not s.current %}disabled{% endif %}>Close live question</button>
       </form>
       <form method="post" action="{{ url_for('admin_abort', key=key) }}" style="display:inline"
             onsubmit="return confirm('Archive and end this session?')">
