@@ -11,9 +11,10 @@ Operator panel:      http://127.0.0.1:5001/admin      (keep this on your own scr
 
 import os
 import sys
-
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "src", "reachy_mini_conversation_app", "tools"))
+
+from questionnaires import PRE_ITEMS, POST_SECTIONS, POST_OPEN
 
 from flask import Flask, request, redirect, url_for, render_template_string  # noqa: E402
 
@@ -21,7 +22,7 @@ from bayes_algorithm import (
     new_state, load_state, save_state, clear_state, open_question,
     update_mastery, undo_last, archive_session,
     PRACTICE, open_practice, end_practice,
-    question_bank, question_order, kc_order, STATE_PATH,
+    question_bank, question_order, kc_order, save_questionnaire, STATE_PATH,
     ZPD_LOW, ZPD_HIGH, PREREQ_THRESHOLD, N_RANDOM_MISTAKES,
 )
 
@@ -32,8 +33,8 @@ except Exception:
 
 PORT = 5001                      # 5000 is AirPlay on macOS
 ADMIN_TOKEN = "finduk1709" 
-SECONDS_PER_QUESTION = 120
-SOFT_WARNING_AT = 105            # 1:45
+SECONDS_PER_QUESTION = 480      # 8 minutes
+SOFT_WARNING_AT = 450           # warn at 7:30
 
 app = Flask(__name__)
 _recorder = None
@@ -93,7 +94,7 @@ def start():
                 state["audio_path"] = path
                 state["audio_started_at"] = _recorder.started_at
                 save_state(state)
-        return redirect(url_for("practice"))
+        return redirect(url_for("pre_questionnaire"))
 
     existing = state_or_none()
     return page("""
@@ -191,18 +192,7 @@ def progress():
         return redirect(url_for("start"))
 
     if state["index"] >= len(question_order):
-        if _recorder is not None:
-            _recorder.stop()
-            _recorder = None
-            state = load_state()
-        folder = archive_session(state)
-        clear_state()
-        return page("""
-          <h1>All done</h1>
-          <p>Thank you — that's the end of the session.</p>
-          <p class="muted">Saved to <code>{{ folder }}</code></p>
-          <p><a href="{{ url_for('start') }}">Start a new session</a></p>
-        """, title="Done", folder=folder)
+        return redirect(url_for("post_questionnaire"))
 
     return page("""
       <p class="muted">Question {{ n }} of {{ total }}</p>
@@ -244,7 +234,7 @@ def timer():
     return page("""
       <p class="muted">Question {{ n }} of {{ total }}</p>
       <div class="q">{{ text }}</div>
-      <div id="timer">2:00</div>
+      <div id="timer">8:00</div>
       <p id="note" class="muted">Talk it through with the robot.</p>
       <form method="post" action="{{ url_for('judge') }}">
         <button type="submit" class="ghost">I'm done</button>
@@ -289,6 +279,124 @@ def record():
     app.logger.info("%s: %s %.2f -> %.2f", state["participant_id"], kc, before, after)
     return redirect(url_for("progress"))
 
+# ============================================================
+# QUESTIONNAIRE ROUTES
+# ============================================================
+
+def _radio(key, options):
+    opts = "".join(
+        f'<label style="display:block;margin:.3rem 0;font-weight:normal">'
+        f'<input type="radio" name="{key}" value="{o}" required> {o}</label>'
+        for o in options)
+    return opts
+
+def _scale5(key):
+    cells = "".join(
+        f'<label style="display:inline-block;text-align:center;margin:0 .4rem">'
+        f'<input type="radio" name="{key}" value="{n}" required><br>'
+        f'<span class="muted">{n}</span></label>'
+        for n in range(1, 6))
+    return cells
+
+
+@app.route("/pre", methods=["GET", "POST"])
+def pre_questionnaire():
+    state = state_or_none()
+    if state is None:
+        return redirect(url_for("start"))
+
+    if request.method == "POST":
+        answers = {k: request.form.get(k, "") for k, *_ in PRE_ITEMS}
+        save_questionnaire(state, "pre", answers)
+        return redirect(url_for("practice"))
+
+    rows = []
+    for key, prompt, kind, options in PRE_ITEMS:
+        if kind == "radio":
+            field = _radio(key, options)
+        elif kind == "number":
+            field = f'<input name="{key}" required style="width:8rem">'
+        else:  # text
+            field = f'<textarea name="{key}" rows="3" style="width:100%"></textarea>'
+        rows.append(f'<div style="margin:1.5rem 0"><p><b>{prompt}</b></p>{field}</div>')
+
+    return page("""
+      <h1>Before we begin</h1>
+      <p class="muted">A few quick questions about your background. You can pick
+      "Prefer not to say" where offered.</p>
+      <form method="post">
+        {{ content|safe }}
+        <p><button type="submit">Continue</button></p>
+      </form>
+    """, title="Pre-task", content="".join(rows))
+
+
+@app.route("/post", methods=["GET", "POST"])
+def post_questionnaire():
+    state = state_or_none()
+    if state is None:
+        return redirect(url_for("start"))
+
+    if request.method == "POST":
+        answers = {}
+        for _, _, items in POST_SECTIONS:
+            for key, _stmt in items:
+                answers[key] = request.form.get(key, "")
+        for key, _prompt, kind in POST_OPEN:
+            answers[key] = request.form.get(key, "")
+            if kind == "yesno_text":
+                answers[key + "_detail"] = request.form.get(key + "_detail", "")
+        save_questionnaire(state, "post", answers)
+
+        # finalise: archive everything and clear the live session
+        global _recorder
+        if _recorder is not None:
+            _recorder.stop()
+            _recorder = None
+            state = load_state()
+        folder = archive_session(state)
+        clear_state()
+        return page("""
+          <h1>All done</h1>
+          <p>Thank you so much — that's the end of the session.</p>
+          <p class="muted">Saved to <code>{{ folder }}</code></p>
+        """, title="Done", folder=folder)
+
+    parts = []
+    for title, scale_note, items in POST_SECTIONS:
+        parts.append(f'<h3 style="margin-top:2rem">{title}</h3>'
+                     f'<p class="muted">{scale_note}</p>')
+        for key, stmt in items:
+            parts.append(
+                f'<div style="margin:1rem 0;padding-bottom:.5rem;'
+                f'border-bottom:1px solid #eee"><p>{stmt}</p>{_scale5(key)}</div>')
+
+    parts.append('<h3 style="margin-top:2rem">A few open questions</h3>'
+                 '<p class="muted">All optional.</p>')
+    for key, prompt, kind in POST_OPEN:
+        if kind == "yesno_text":
+            parts.append(
+                f'<div style="margin:1rem 0"><p>{prompt}</p>'
+                f'<label style="font-weight:normal"><input type="radio" name="{key}" '
+                f'value="No" checked> No</label> '
+                f'<label style="font-weight:normal"><input type="radio" name="{key}" '
+                f'value="Yes"> Yes</label>'
+                f'<br><textarea name="{key}_detail" rows="2" style="width:100%;margin-top:.4rem" '
+                f'placeholder="If yes, please describe"></textarea></div>')
+        else:
+            parts.append(
+                f'<div style="margin:1rem 0"><p>{prompt}</p>'
+                f'<textarea name="{key}" rows="3" style="width:100%"></textarea></div>')
+
+    return page("""
+      <h1>After the activity</h1>
+      <p class="muted">There are no right or wrong answers — just your honest
+      impressions.</p>
+      <form method="post">
+        {{ content|safe }}
+        <p style="margin-top:2rem"><button type="submit">Finish</button></p>
+      </form>
+    """, title="Post-task", content="".join(parts))
 
 # ---------------------------------------------------------------- operator
 

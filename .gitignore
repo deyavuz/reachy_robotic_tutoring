@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+data/
+recordings/
+src/reachy_mini_conversation_app/tools/recordings/
+session_state.json
+*.wav
 
 # Virtual environments
 reachy_mini_env

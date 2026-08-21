@@ -193,9 +193,9 @@ question_order = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7",
                   "Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14"]
 
 PRACTICE = {
-    "text": "A bag contains 3 red balls and 1 blue ball. You take one out without looking. "
+    "text": "A bag contains 3 red marbles and 1 blue marble. You take one out without looking. "
             "What is the probability that it is red?\n\na. 1 out of 2\nb. 3 out of 4\nc. 1 out of 4",
-    "line": "I think it's 1 out of 2, since the ball is either red or blue.",
+    "line": "I think it's 1 out of 2, since the marble is either red or blue.",
 }
 
 
@@ -383,3 +383,24 @@ def archive_session(state, move_audio=True):
                 state["audio_path"] = dest
 
     return d
+
+"""Functions to add to bayes_algorithm.py for questionnaire persistence.
+
+These write questionnaire responses into the same data/<pid>/ folder as the
+trial log, so a participant's entire session lives in one place.
+"""
+
+def save_questionnaire(state, which, answers):
+    """which: 'pre' or 'post'. answers: dict of key -> value."""
+    import csv, os
+    state[f"{which}_questionnaire"] = answers
+    save_state(state)
+
+    d = participant_dir(state["participant_id"])
+    path = os.path.join(d, f"{which}_{state['participant_id']}.csv")
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["participant_id", "condition", "question_key", "response"])
+        for k, v in answers.items():
+            w.writerow([state["participant_id"], state["condition"], k, v])
+    return path
