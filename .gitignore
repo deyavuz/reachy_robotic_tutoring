@@ -11,6 +11,7 @@ session_state*.json
 
 # Virtual environments
 reachy_mini_env
+reachy-venv/
 .venv/
 venv/
 ENV/
