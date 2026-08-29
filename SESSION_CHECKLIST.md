@@ -1,9 +1,5 @@
 # Session checklist
 
-Print this. Tick it every time.
-
----
-
 ## Night before
 
 - [ ] `python preflight.py` → ALL CHECKS PASSED

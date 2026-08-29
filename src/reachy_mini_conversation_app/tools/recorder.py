@@ -10,13 +10,16 @@ Run this file directly to see which backend is available and list devices:
 """
 
 import os
+import re
 import queue
 import shutil
 import subprocess
 import threading
 from datetime import datetime
 
-DEVICE = 0
+MIC_NAME_HINT = "MacBook Air Mikrofonu"  # matched by name, not index — avfoundation device
+                                           # order shifts when apps like Teams add virtual devices
+DEVICE = None  # resolved from MIC_NAME_HINT at record time; see _find_device()
 SAMPLE_RATE = 44100
 CHANNELS = 1
 
@@ -31,6 +34,33 @@ except Exception:
     BACKEND = "ffmpeg" if shutil.which("ffmpeg") else None
 
 
+def _find_device(name_hint):
+    """Resolve an input device index by name; falls back to 0 with a loud warning."""
+    if BACKEND == "sounddevice":
+        for idx, info in enumerate(sd.query_devices()):
+            if name_hint.lower() in info["name"].lower() and info["max_input_channels"] > 0:
+                return idx
+    elif BACKEND == "ffmpeg":
+        listing = subprocess.run(
+            ["ffmpeg", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
+            capture_output=True, text=True,
+        ).stderr
+        in_audio_section = False
+        for line in listing.splitlines():
+            if "AVFoundation audio devices" in line:
+                in_audio_section = True
+                continue
+            if in_audio_section and name_hint.lower() in line.lower():
+                match = re.search(r"\[(\d+)\]", line)
+                if match:
+                    return int(match.group(1))
+
+    print(f"[recorder] Could not find a device matching {name_hint!r} — falling back to "
+          "device 0. Run `python recorder.py` to see the actual device list; recording may "
+          "silently capture the wrong input.")
+    return 0
+
+
 class SessionRecorder:
     """Records continuously, writing incrementally so a crash still leaves a file."""
 
@@ -38,7 +68,7 @@ class SessionRecorder:
         os.makedirs(RECORDINGS_DIR, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.path = os.path.join(RECORDINGS_DIR, f"{participant_id}_{stamp}.wav")
-        self.device = device
+        self.device = device if device is not None else _find_device(MIC_NAME_HINT)
         self.started_at = None
         self.backend = BACKEND
         self._q = queue.Queue()
@@ -76,10 +106,9 @@ class SessionRecorder:
             self._thread.start()
 
         elif self.backend == "ffmpeg":
-            dev = f":{self.device}" if self.device is not None else ":default"
             self._proc = subprocess.Popen(
                 ["ffmpeg", "-loglevel", "error", "-f", "avfoundation",
-                 "-i", dev, "-ar", str(SAMPLE_RATE), "-ac", str(CHANNELS),
+                 "-i", f":{self.device}", "-ar", str(SAMPLE_RATE), "-ac", str(CHANNELS),
                  "-y", self.path],
                 stdin=subprocess.PIPE,
             )
@@ -115,12 +144,14 @@ def status():
     if BACKEND == "sounddevice":
         print(sd.query_devices())
         print("\ndefault input index:", sd.default.device[0])
-        print("\nSet DEVICE at the top of this file to an index that is NOT the "
-              "robot's microphone.")
+        print(f"\nResolved MIC_NAME_HINT {MIC_NAME_HINT!r} -> device {_find_device(MIC_NAME_HINT)}")
+        print("Update MIC_NAME_HINT at the top of this file if that's wrong — it must "
+              "not be the robot's microphone.")
     elif BACKEND == "ffmpeg":
         print("\nListing avfoundation devices:")
         subprocess.run(["ffmpeg", "-f", "avfoundation", "-list_devices", "true",
                         "-i", ""], stderr=subprocess.STDOUT)
+        print(f"\nResolved MIC_NAME_HINT {MIC_NAME_HINT!r} -> device {_find_device(MIC_NAME_HINT)}")
 
 
 if __name__ == "__main__":

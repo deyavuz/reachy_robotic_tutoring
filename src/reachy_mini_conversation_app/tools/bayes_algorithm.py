@@ -154,14 +154,13 @@ question_bank = {
     },
     "Q9": {
         "kc": "KC4_total_prob",
-        "source": "CPR Item 5 (Eddy 1982) — mammogram",
-        "correct": "about 7.8%",
-        "text": "In a large group of women, 1% actually have breast cancer. "
-                "The remaining 99% do not. "
-                "A woman takes a mammogram and it comes back positive. "
-                "Given only that her test is positive, roughly what is the probability that she "
-                "actually has breast cancer — is it closer to 8%, or closer to 80%?",
-        "line": "If the test came back positive, I'd say it's around 80% likely she has it.",
+        "source": "CPR Item 5 (Eddy 1982) — mammogram, adapted with explicit sensitivity/false-positive rate",
+        "correct": "about 9.2%",
+        "text": "1% of women have breast cancer. The mammogram correctly returns positive for "
+                "90% of women who have it, but also returns a false positive for 9% of women "
+                "who don't. A woman tests positive. Roughly what is the probability she "
+                "actually has breast cancer?",
+        "line": "If the test came back positive, I'd say it's around 90% likely she has it.",
         "mistake_type": "positive result read as the posterior, base rate ignored",
     },
 

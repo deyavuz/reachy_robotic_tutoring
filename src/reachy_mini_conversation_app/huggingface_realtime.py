@@ -164,6 +164,13 @@ class HuggingFaceRealtimeHandler(ConversationHandler):
         self._in_flight_tool_calls: set[str] = set()
         self._tool_batch_needs_response = False
 
+        # Audio-send failure recovery: if input_audio_buffer.append() starts
+        # failing repeatedly (stale/broken connection), self-heal instead of
+        # silently dropping mic audio for the rest of the session.
+        self._consecutive_audio_send_failures = 0
+        self._audio_send_failure_restart_threshold = 10
+        self._audio_restart_in_progress = False
+
     @staticmethod
     def _sanitize_tool_result_for_model(tool_name: str, tool_result: dict[str, Any]) -> dict[str, Any]:
         """Remove bulky transport-only fields before echoing tool output back to the model."""
@@ -986,8 +993,30 @@ class HuggingFaceRealtimeHandler(ConversationHandler):
             audio_message = base64.b64encode(audio_frame.tobytes()).decode("utf-8")
             await self.connection.input_audio_buffer.append(audio=audio_message)
         except Exception as e:
-            logger.debug("Dropping audio frame: connection not ready (%s)", e)
+            self._consecutive_audio_send_failures += 1
+            if self._consecutive_audio_send_failures == 1:
+                logger.warning("Dropping audio frame: connection not ready (%s)", e)
+            if (
+                self._consecutive_audio_send_failures >= self._audio_send_failure_restart_threshold
+                and not self._audio_restart_in_progress
+            ):
+                logger.warning(
+                    "%d consecutive audio frames failed to send; restarting realtime session",
+                    self._consecutive_audio_send_failures,
+                )
+                self._audio_restart_in_progress = True
+                asyncio.create_task(self._recover_from_audio_send_failures(), name="realtime-audio-recovery")
             return
+        else:
+            self._consecutive_audio_send_failures = 0
+
+    async def _recover_from_audio_send_failures(self) -> None:
+        """Restart the realtime session after repeated audio-send failures."""
+        try:
+            await self._restart_session()
+        finally:
+            self._consecutive_audio_send_failures = 0
+            self._audio_restart_in_progress = False
 
     async def shutdown(self) -> None:
         """Shutdown the handler."""
